@@ -69,10 +69,8 @@ useEffect(() => {
                 />
               )}
             </div>
-
-            {/* User info - only visible on larger screens */}
-            <div className="hidden lg:block text-left min-w-0">
-              <div className="font-medium truncate">{user.fullName}</div>
+             <div className="hidden lg:block text-left min-w-0">
+              <div className="font-medium truncate">{user.name}</div>
               <div className="text-sm text-zinc-400">
                 {onlineUsers.includes(user._id) ? "Online" : "Offline"}
               </div>
@@ -88,3 +86,7 @@ useEffect(() => {
   );
 };
 export default Sidebar;
+
+
+
+

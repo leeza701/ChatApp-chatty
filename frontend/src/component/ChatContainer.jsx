@@ -1,29 +1,33 @@
+import { useChatStore } from "../store/useChatStore";
+import { useEffect, useRef } from "react";
 
-import { useChatStore } from "../store/useChatStore.js"
-import { useEffect,useRef } from "react"
-import ChatHeader from "./ChatHeader.jsx";
-import MessageInput from "./MessageInput.jsx";
-import MessageSkeleton from "./skeletons/messageSkeleton.jsx";
-import { formatMessageTime } from "../lib/utils.js";
-import { useAuthStore } from "../store/useAuthStore.js";
+import ChatHeader from "./ChatHeader";
+import MessageInput from "./MessageInput";
+import MessageSkeleton from "./skeletons/MessageSkeleton";
+import { useAuthStore } from "../store/useAuthStore";
+import { formatMessageTime } from "../lib/utils";
+
 const ChatContainer = () => {
-
-  const {messages,getMessages,isMessagesLoading,selectedUser,subscribeToMessages,unsubscribeFromMessages} = useChatStore();
+  const {
+    messages,
+    getMessages,
+    isMessagesLoading,
+    selectedUser,
+    subscribeToMessages,
+    unsubscribeFromMessages,
+  } = useChatStore();
+  const { authUser } = useAuthStore();
   const messageEndRef = useRef(null);
-  const {authUser}=useAuthStore();
-   
+
   useEffect(() => {
-  if (selectedUser?._id) {
     getMessages(selectedUser._id);
-  }
-  subscribeToMessages();
-  return ()=>unsubscribeFromMessages();
-}, [selectedUser?._id, getMessages,subscribeToMessages,
-unsubscribeFromMessages]);
-    
 
+    subscribeToMessages();
 
-useEffect(() => {
+    return () => unsubscribeFromMessages();
+  }, [selectedUser._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+
+  useEffect(() => {
     if (messageEndRef.current && messages) {
       messageEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
@@ -39,23 +43,22 @@ useEffect(() => {
     );
   }
 
-return (
+  return (
     <div className="flex-1 flex flex-col overflow-auto">
       <ChatHeader />
 
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {Array.isArray(messages) && messages.map((message) => (
+        {messages.map((message) => (
           <div
-          key={message._id}
-          className={`chat ${String(message.senderId) === String(authUser?._id) ? "chat-end" : "chat-start"}`}
-          ref={messageEndRef}
->
-
+            key={message._id}
+            className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+            ref={messageEndRef}
+          >
             <div className=" chat-image avatar">
               <div className="size-10 rounded-full border">
                 <img
                   src={
-                    String(message.senderId) === String(authUser._id)
+                    message.senderId === authUser._id
                       ? authUser.profilePic || "/avatar.png"
                       : selectedUser.profilePic || "/avatar.png"
                   }
@@ -86,9 +89,4 @@ return (
     </div>
   );
 };
-
-export default ChatContainer
-
-
-
-
+export default ChatContainer;

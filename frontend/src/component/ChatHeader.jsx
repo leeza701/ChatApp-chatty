@@ -77,7 +77,7 @@ const ChatHeader = () => {
           {/* User info */}
           <div>
             <h3 className="font-medium">{name}</h3>
-            <p className="text-sm text-base-content/70">online</p>
+            <p className="text-sm text-base-content/70">onlinne</p>
           </div>
         </div>
 

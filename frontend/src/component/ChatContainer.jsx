@@ -214,7 +214,7 @@ import useAIStore from "../store/ai.store";
 import { useEffect, useRef } from "react";
 
 import ChatHeader from "./ChatHeader";
-import MessageInput from "./MessageInput";
+import MessageInput from "./Messageinput.jsx";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 
 import { useAuthStore } from "../store/useAuthStore";

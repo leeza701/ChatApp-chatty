@@ -1,31 +1,16 @@
 import { create } from "zustand";
 import { axiosInstance } from "../lib/axios";
-
+import { useAuthStore } from "./useAuthStore";
 
 const useAIStore = create((set) => ({
   messages: [],
   isLoading: false,
 
-//   sendMessage: async (text) => {
-//     const userMsg = { role: "user", text };
+  sendMessage: async (text) => {
+    const authUser = useAuthStore.getState().authUser;
 
-//     set((s) => ({ messages: [...s.messages, userMsg], isLoading: true }));
+    if (!authUser) return;
 
-//     // const res = await axios.post("/ai", { message: text });
-//     const res = await axiosInstance.post("/ai", {
-//   message: text,
-// });
-
-
-//     const aiMsg = { role: "ai", text: res.data.reply };
-
-//     set((s) => ({
-//       messages: [...s.messages, aiMsg],
-//       isLoading: false,
-//     }));
-//   },
-sendMessage: async (text) => {
-  try {
     const userMsg = { role: "user", text };
 
     set((s) => ({
@@ -35,24 +20,16 @@ sendMessage: async (text) => {
 
     const res = await axiosInstance.post("/ai", {
       message: text,
+      userId: authUser._id, 
     });
 
-    const aiMsg = {
-      role: "ai",
-      text: res.data.reply,
-    };
+    const aiMsg = { role: "ai", text: res.data.reply };
 
     set((s) => ({
       messages: [...s.messages, aiMsg],
       isLoading: false,
     }));
-  } catch (error) {
-    console.error("AI error:", error);
-
-    set({ isLoading: false });
-  }
-}
-
+  },
 }));
 
 export default useAIStore;

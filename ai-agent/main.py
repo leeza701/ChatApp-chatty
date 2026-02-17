@@ -1,13 +1,36 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from agent import run_agent
+from dotenv import load_dotenv
+from pathlib import Path
+import os
+from openai import OpenAI
+
+# ✅ Load .env
+env_path = Path(__file__).parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+api_key = os.getenv("GROQ_API_KEY")
+
+if not api_key:
+    raise ValueError("❌ GROQ_API_KEY missing in .env")
+
+# ✅ Groq client
+client = OpenAI(
+    api_key=api_key,
+    base_url="https://api.groq.com/openai/v1",
+)
+
+print("✅ Groq key loaded")
 
 app = FastAPI()
 
-class Query(BaseModel):
-    message: str
+class ChatRequest(BaseModel):
+    messages: list
 
-@app.post("/chat")
-def chat(q: Query):
-    reply = run_agent(q.message)
-    return {"reply": reply}
+@app.post("/api/chat")
+def chat(req: ChatRequest):
+    response = client.chat.completions.create(
+        model="openai/gpt-oss-20b",  # Groq model
+        messages=req.messages
+    )
+    return {"reply": response.choices[0].message.content}

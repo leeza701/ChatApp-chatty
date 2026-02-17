@@ -83,25 +83,45 @@ signup: async (data) => {
     }
   },
 
+  // connectSocket: () => {
+  //   const { authUser } = get();
+  //   if (!authUser || get().socket?.connected) return;
+
+  //   const socket = io(BASE_URL, {
+  //     query: {
+  //       userId: authUser._id,
+  //     },
+  //   });
+  //   socket.connect();
+
+  //   set({ socket: socket });
+
+  //   socket.on("getOnlineUsers", (userIds) => {
+  //     set({ onlineUsers: userIds });
+  //   });
+  // },
+  // disconnectSocket: () => {
+  //   if (get().socket?.connected) get().socket.disconnect();
+  // },
+
   connectSocket: () => {
-    const { authUser } = get();
-    if (!authUser || get().socket?.connected) return;
+  const { authUser } = get();
 
-    const socket = io(BASE_URL, {
-      query: {
-        userId: authUser._id,
-      },
-    });
-    socket.connect();
+  if (!authUser?._id || get().socket?.connected) return;
 
-    set({ socket: socket });
+  const socket = io(BASE_URL, {
+    query: {
+      userId: authUser._id,
+    },
+  });
 
-    socket.on("getOnlineUsers", (userIds) => {
-      set({ onlineUsers: userIds });
-    });
-  },
-  disconnectSocket: () => {
-    if (get().socket?.connected) get().socket.disconnect();
-  },
+  socket.connect();
+  set({ socket });
+
+  socket.on("getOnlineUsers", (userIds) => {
+    set({ onlineUsers: userIds });
+  });
+},
+
 }));
   

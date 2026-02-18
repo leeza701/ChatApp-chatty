@@ -111,7 +111,7 @@ const Sidebar = () => {
     users,
     selectedUser,
     setSelectedUser,
-    //clearUnread,
+    // clearUnread,
     isUsersLoading,
     receiveMessage,
   } = useChatStore();
@@ -202,10 +202,10 @@ const Sidebar = () => {
             key={user._id}
             onClick={async () => {
               setSelectedUser(user);
-             // clearUnread(user._id);
-              try {
-                await axiosInstance.put(`/messages/read/${user._id}`);
-              } catch {}
+              //clearUnread(user._id);
+              // try {
+              //   await axiosInstance.put(`/messages/read/${user._id}`);
+              // } catch {}
             }}
             className={`
               w-full p-3 flex items-center gap-3

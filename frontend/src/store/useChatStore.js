@@ -54,33 +54,56 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  subscribeToMessages: () => {
-    const { selectedUser } = get();
+  // subscribeToMessages: () => {
+  //   const { selectedUser } = get();
+  //   if (!selectedUser) return;
+
+  //   const socket = useAuthStore.getState().socket;
+  //   const { authUser } = useAuthStore.getState();
+
+  //   socket.on("newMessage", (newMessage) => {
+  //     const isMessageFromSelectedUser =
+  //       newMessage.senderId === selectedUser._id;
+  //     const isMessageToSelectedUser =
+  //       newMessage.receiverId === selectedUser._id &&
+  //       newMessage.senderId === authUser._id;
+
+  //     if (isMessageFromSelectedUser || isMessageToSelectedUser) {
+  //       const { messages } = get();
+  //       const messageExists = messages.some(
+  //         (msg) => msg._id === newMessage._id
+  //       );
+  //       if (!messageExists) {
+  //         set({
+  //           messages: [...messages, newMessage],
+  //         });
+  //       }
+  //     }
+  //   });
+  // },
+
+
+subscribeToMessages: () => {
+  const socket = useAuthStore.getState().socket;
+  if (!socket) return;
+
+  socket.on("newMessage", (newMessage) => {
+    const { selectedUser, messages } = get();
     if (!selectedUser) return;
 
-    const socket = useAuthStore.getState().socket;
-    const { authUser } = useAuthStore.getState();
+    const isChatMessage =
+      newMessage.senderId === selectedUser._id ||
+      newMessage.receiverId === selectedUser._id;
 
-    socket.on("newMessage", (newMessage) => {
-      const isMessageFromSelectedUser =
-        newMessage.senderId === selectedUser._id;
-      const isMessageToSelectedUser =
-        newMessage.receiverId === selectedUser._id &&
-        newMessage.senderId === authUser._id;
+    if (isChatMessage) {
+      if (messages.some((m) => m._id === newMessage._id)) return;
+      set({ messages: [...messages, newMessage] });
+    } else {
+      get().receiveMessage(newMessage);
+    }
+  });
+},
 
-      if (isMessageFromSelectedUser || isMessageToSelectedUser) {
-        const { messages } = get();
-        const messageExists = messages.some(
-          (msg) => msg._id === newMessage._id
-        );
-        if (!messageExists) {
-          set({
-            messages: [...messages, newMessage],
-          });
-        }
-      }
-    });
-  },
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;

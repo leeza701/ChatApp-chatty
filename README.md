@@ -19,3 +19,21 @@ The project combines a modern React frontend, a Node.js backend, and an AI agent
 
 ## 🏗 Project Structure
 
+---
+
+## 🧰 Tech Stack
+
+**Frontend**
+- React
+- JavaScript (JSX)
+- CSS / Styling
+
+**Backend**
+- Node.js
+- Express.js
+
+**AI Agent**
+- AI API integration (LLM / OpenAI / custom logic)
+
+---
+

@@ -3,65 +3,16 @@ import axios from "axios";
 import Message from "../models/message.models.js";
 import User from "../models/user.models.js";
 const router = express.Router();
-// router.post("/", async (req, res) => {
-//   try {
-//     const { message, userId } = req.body;
+import mongoose from "mongoose";
+import { sendMessage as mainSendMessage } from "../controllers/message.controllers.js";
+import { protectRoute } from "../middleware/auth.middleware.js"
 
-//     const history = await Message.find({
-//       $or: [
-//         { senderId: userId, receiverId: "ai_assistant" },
-//         { senderId: "ai_assistant", receiverId: userId }
-//       ]
-//     })
-//       .sort({ createdAt: -1 })
-//       .limit(20)
-//       .lean();
-
-//   const messages = history.reverse().map(m => ({
-//   role: m.senderId === "ai_assistant" ? "assistant" : "user",
-//   content: m.text || ""   // ✅ prevents null/undefined
-// }));
-
-
-//     messages.push({ role: "user", content: message });
-
-//     const aiRes = await axios.post(process.env.AI_URL, {
-//       messages
-//     });
-
-//     const reply = aiRes.data.reply;
-
-// await Message.create({
-//   senderId: userId,
-//   receiverId: "ai_assistant",
-//   text: message
-// });
-
-// await Message.create({
-//   senderId: "ai_assistant",
-//   receiverId: userId,
-//   text: reply
-// });
-
-//     res.json({ reply });
-
-//   } catch (e) {
-//     console.error(e);
-//     res.status(500).json({ error: "AI failed" });
-//   }
-// });
-
-
-
-router.post("/", async (req, res) => {
+router.post("/", protectRoute, async (req, res) => {
   try {
-    const { message, userId } = req.body;
+    const { text } = req.body;
+    const userId = req.user._id.toString(); 
 
-    if (!message || !userId) {
-      return res.status(400).json({
-        error: "Missing message or userId",
-      });
-    }
+    const message = text;
 
     const history = await Message.find({
       $or: [
@@ -73,64 +24,43 @@ router.post("/", async (req, res) => {
       .limit(20)
       .lean();
 
-    const messages = history
-      .reverse()
+    const messages = history.reverse().map((m) => ({
+      role: m.senderId === "ai_assistant" ? "assistant" : "user",
+      content: m.text,
+    }));
 
-      .filter((m) => m.text)
+    messages.push({ role: "user", content: message });
 
-      .map((m) => ({
-        role: m.senderId === "ai_assistant" ? "assistant" : "user",
+    const AI_URL =
+      process.env.NODE_ENV === "production"
+        ? process.env.AI_URL_PROD
+        : process.env.AI_URL;
 
-  
-        content: String(m.text ?? ""),
-      }));
-
-    // ✅ Add latest user message
-    messages.push({
-      role: "user",
-      content: String(message),
+    const aiRes = await axios.post(AI_URL, {
+      message : message,
+      userId: userId, 
     });
+    console.log("✅ AI RESPONSE:", aiRes.data);
 
-    // ✅ Call FastAPI AI service
-    const aiRes = await axios.post(process.env.AI_URL, {
-      messages,
-    });
+    const reply = aiRes.data.result;
 
-    // ✅ Safe reply extraction
-    const reply =
-      aiRes.data?.reply || "Sorry, I couldn't generate a response.";
-
-    // ✅ Save USER → AI
     await Message.create({
       senderId: userId,
       receiverId: "ai_assistant",
       text: message,
     });
 
-    // ✅ Save AI → USER
     await Message.create({
       senderId: "ai_assistant",
       receiverId: userId,
       text: reply,
     });
 
-    // ✅ Send response to frontend
     res.json({ reply });
 
   } catch (e) {
-    console.error("🔥 Backend AI Error:");
-
-    // ✅ Detailed FastAPI / Axios error logging
-    if (e.response) {
-      console.error("Status:", e.response.status);
-      console.error("Data:", e.response.data);
-    } else {
-      console.error(e.message);
-    }
-
-    res.status(500).json({
-      error: "AI failed",
-    });
+    console.error(e);
+    res.status(500).json({ error: "AI failed" });
   }
 });
 
@@ -144,5 +74,47 @@ router.get("/user", async (req, res) => {
   }
 });
 
+router.get("/online", async (req, res) => {
+  try {
+    const onlineUsers = await User.find({ isOnline: true }).select("-password");
+    res.json(onlineUsers);
+  } catch (e) {
+    console.error("AI online users error", e);
+    res.status(500).json({ error: "failed" });
+  }
+});
+
+router.post("/send", async (req, res) => {
+  try {
+    const { toUserId, text, fromUserId } = req.body;
+
+    const fakeReq = {
+      user: { _id: new mongoose.Types.ObjectId(fromUserId) },
+      params: { id: new mongoose.Types.ObjectId(toUserId) },
+      body: { text },
+    };
+
+    const fakeRes = {
+      status: (code) => ({
+        json: (data) => res.status(code).json(data),
+      }),
+    };
+
+    await mainSendMessage(fakeReq, fakeRes);
+  } catch (e) {
+    console.error("AI send error", e);
+    res.status(500).json({ error: "send failed" });
+  }
+});
+
+router.get("/search", async (req, res) => {
+  const q = req.query.q;
+
+  const users = await User.find({
+    fullName: { $regex: q, $options: "i" },
+  }).select("_id fullName");
+
+  res.json(users);
+});
 
 export default router;

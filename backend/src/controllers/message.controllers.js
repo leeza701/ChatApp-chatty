@@ -62,21 +62,17 @@ export const getMessages = async (req, res) => {
   }
 };
 
-
-
 // export const sendMessage = async (req, res) => {
 //   try {
 //     const { text, image } = req.body;
-//     const { id: receiverId } = req.params;
-//     const senderId = req.user._id;
+//     const senderId = req.user._id.toString();
+//     const receiverId = req.params.id.toString();
 
 //     if (receiverId === "ai_assistant") {
-//       const aiReply = "Hello 👋 I'm your AI assistant";
-
 //       const aiMessage = new Message({
 //         senderId: "ai_assistant",
 //         receiverId: senderId,
-//         text: aiReply,
+//         text: "Hello 👋 I'm your AI assistant",
 //         isRead: true,
 //       });
 
@@ -100,18 +96,10 @@ export const getMessages = async (req, res) => {
 
 //     await newMessage.save();
 
-//     // ⭐ REAL-TIME EMIT TO RECEIVER
-//     // Emit to receiver
-// const receiverSocketId = getReceiverSocketId(receiverId);
-// if (receiverSocketId) {
-//   io.to(receiverSocketId).emit("newMessage", newMessage);
-// }
-
-// // Emit to sender
-// const senderSocketId = getReceiverSocketId(senderId.toString());
-// if (senderSocketId) {
-//   io.to(senderSocketId).emit("newMessage", newMessage);
-// }
+//     const receiverSocketId = getReceiverSocketId(receiverId);
+//     if (receiverSocketId) {
+//       io.to(receiverSocketId).emit("newMessage", newMessage);
+//     }
 
 //     res.status(201).json(newMessage);
 //   } catch (error) {
@@ -121,11 +109,14 @@ export const getMessages = async (req, res) => {
 // };
 
 
+
+
 export const sendMessage = async (req, res) => {
   try {
     const { text, image } = req.body;
-    const senderId = req.user._id.toString();
-    const receiverId = req.params.id.toString();
+
+    const senderId = req.user._id;      // ✅ keep ObjectId
+    const receiverId = req.params.id;
 
     if (receiverId === "ai_assistant") {
       const aiMessage = new Message({
@@ -140,12 +131,13 @@ export const sendMessage = async (req, res) => {
     }
 
     let imageUrl = null;
+
     if (image) {
       const upload = await cloudinary.uploader.upload(image);
       imageUrl = upload.secure_url;
     }
 
-    const newMessage = new Message({
+    const newMessage = await Message.create({
       senderId,
       receiverId,
       text: text || "",
@@ -153,19 +145,27 @@ export const sendMessage = async (req, res) => {
       isRead: false,
     });
 
-    await newMessage.save();
+    // ✅ SOCKET EMIT
+    const receiverSocketId = getReceiverSocketId(receiverId.toString());
+    const senderSocketId = getReceiverSocketId(senderId.toString());
 
-    const receiverSocketId = getReceiverSocketId(receiverId);
     if (receiverSocketId) {
       io.to(receiverSocketId).emit("newMessage", newMessage);
     }
 
+    // ⭐ IMPORTANT FIX
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("newMessage", newMessage);
+    }
+
     res.status(201).json(newMessage);
+
   } catch (error) {
     console.log("Error in sendMessage:", error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 };
+
 
 export const markMessagesAsRead = async (req, res) => {
   try {

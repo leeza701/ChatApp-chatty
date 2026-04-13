@@ -1,9 +1,9 @@
 import { useChatStore } from "../store/useChatStore";
-import useAIStore from "../store/ai.store";
+import {useAIStore} from "../store/ai.store";
 import { useEffect, useRef } from "react";
 
 import ChatHeader from "./ChatHeader";
-import MessageInput from "./MessageInput";
+import MessageInput from "./Messageinput";
 import MessageSkeleton from "./skeletons/MessageSkeleton";
 
 import { useAuthStore } from "../store/useAuthStore";
@@ -54,7 +54,7 @@ const ChatContainer = () => {
   const chatMessages = isAI
     ? aiMessages.map((m, i) => ({
         _id: i,
-        text: m.text,
+        text: m.content,
         senderId: m.role === "user" ? authUser._id : "ai",
         createdAt: new Date(),
       }))

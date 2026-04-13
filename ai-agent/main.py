@@ -1,167 +1,65 @@
-# # from fastapi import FastAPI
-# # from pydantic import BaseModel
-# # from dotenv import load_dotenv
-# # from pathlib import Path
-# # import os
-# # from openai import OpenAI
-# # from agent import run_agent
-
-# # # ✅ Load .env
-# # env_path = Path(__file__).parent / ".env"
-# # load_dotenv(dotenv_path=env_path)
-
-# # api_key = os.getenv("GROQ_API_KEY")
-
-# # if not api_key:
-# #     raise ValueError("❌ GROQ_API_KEY missing in .env")
-
-# # # ✅ Groq client
-# # client = OpenAI(
-# #     api_key=api_key,
-# #     base_url="https://api.groq.com/openai/v1",
-# # )
-
-# # print("✅ Groq key loaded")
-
-# # app = FastAPI()
-
-# # class ChatRequest(BaseModel):
-# #     messages: list
-
-# # @app.post("/api/chat")
-# # def chat(req: ChatRequest):
-# #     # last user message
-# #     user_msg = req.messages[-1]["content"]
-
-# #     reply = run_agent(user_msg)
-
-# #     return {"reply": reply}
-
-
-
-
-
-
-
-
-# from fastapi import FastAPI
-# from pydantic import BaseModel
-# from dotenv import load_dotenv
-# from pathlib import Path
-# import os
-# from openai import OpenAI
-# from agent import run_agent
-
-# env_path = Path(__file__).parent / ".env"
-# load_dotenv(dotenv_path=env_path)
-
-# api_key = os.getenv("OPENAI_API_KEY")
-
-# if not api_key:
-#     raise ValueError("❌ OPENAI_API_KEY missing in .env")
-
-# client = OpenAI(api_key=api_key)
-
-# print("✅ OpenAI loaded")
-
-# app = FastAPI()
-
-# class ChatRequest(BaseModel):
-#     messages: list
-
-# @app.post("/api/chat")
-
-
-# def is_chatty_related(question: str):
-#     keywords = [
-#         "chatty", "app", "message", "messages",
-#         "user", "users", "contact", "contacts",
-#         "online", "account", "settings"
-#     ]
-
-#     q = question.lower()
-#     return any(k in q for k in keywords)
-
-# # def chat(req: ChatRequest):
-# #     # last user message
-# #     user_msg = req.messages[-1]["content"]
-
-# #     reply = run_agent(user_msg)
-
-# #     return {"reply": reply}
-
-# def run_agent(question: str):
-
-#     if not is_chatty_related(question):
-#         return "Sorry, I can only help with questions about the Chatty app."
-
-# from fastapi import FastAPI
-# from pydantic import BaseModel
-# from dotenv import load_dotenv
-# from pathlib import Path
-# import os
-# from openai import OpenAI
-
-# env_path = Path(__file__).parent / ".env"
-# load_dotenv(dotenv_path=env_path)
-
-# api_key = os.getenv("GROQ_API_KEY")
-
-# if not api_key:
-#     raise ValueError("❌ GROQ_API_KEY missing in .env")
-
-# client = OpenAI(
-#     api_key=api_key,
-#     base_url="https://api.groq.com/openai/v1",
-# )
-
-# print("✅ Groq loaded")
-
-# app = FastAPI()
-
-# class ChatRequest(BaseModel):
-#     messages: list
-
-# @app.post("/api/chat")
-# def chat(req: ChatRequest):
-#     response = client.chat.completions.create(
-#         model="openai/gpt-oss-20b", 
-#         messages=req.messages
-#     )
-#     return {"reply": response.choices[0].message.content}
-
-
-
-from fastapi import FastAPI
 from pydantic import BaseModel
-from dotenv import load_dotenv
-from pathlib import Path
-import os
+from fastapi import FastAPI
 from openai import OpenAI
+from dotenv import load_dotenv
 from agent import run_agent
+from fastapi.middleware.cors import CORSMiddleware 
+import os
+load_dotenv()
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+app=FastAPI()
 
-env_path = Path(__file__).parent / ".env"
-load_dotenv(dotenv_path=env_path)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+    "http://localhost:5174",
+    
+],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+class Query(BaseModel):
+    message : str
+    userId : str
 
-api_key = os.getenv("OPENAI_API_KEY")
+@app.get("/")
+def home():
+    return {"api is running"}
 
-if not api_key:
-    raise ValueError("❌ OPENAI_API_KEY missing in .env")
+@app.get("/")
+def home():
+    return {"message": "AI is running 🚀"}
 
-client = OpenAI(api_key=api_key)
+@app.post("/chat")
+def chat(query: Query):
+    try:
+        response = run_agent(
+            user_query=query.message,
+            user_id=query.userId  
+        )
+        return {
+            "result": response 
+        }
+    except Exception as e:
+        print("ERROR:", e) 
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
 
-print("✅ OpenAI loaded")
 
-app = FastAPI()
 
-class ChatRequest(BaseModel):
-    messages: list
 
-@app.post("/api/chat")
-def chat(req: ChatRequest):
-    # last user message
-    user_msg = req.messages[-1]["content"]
 
-    reply = run_agent(user_msg)
 
-    return {"reply": reply}
+
+
+
+
+
+
+
+
+
+
+
